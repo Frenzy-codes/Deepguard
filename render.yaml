@@ -9,5 +9,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.7"
+      - key: FORCE_MOCK_MODE
+        value: "true"
+      - key: ALLOWED_ORIGINS
+        value: "*"
     plan: free
     healthCheckPath: /health
