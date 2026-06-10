@@ -39,17 +39,22 @@ def preprocess_image(image: np.ndarray, target_size: tuple[int, int] = (224, 224
     img_resized = cv2.resize(img_rgb, target_size)
     img_array = np.expand_dims(img_resized.astype("float32"), axis=0)
     
-    try:
-        from tensorflow.keras.applications.resnet50 import preprocess_input  # type: ignore
-        return preprocess_input(img_array)
-    except ImportError:
-        # Fallback manual ResNet50 preprocessing
-        # Subtract ImageNet mean BGR values [103.939, 116.779, 123.68] from the array
-        img_array = img_array.copy()
-        img_array[..., 0] -= 123.68
-        img_array[..., 1] -= 116.779
-        img_array[..., 2] -= 103.939
-        return img_array
+    import os
+    FORCE_MOCK_MODE = os.environ.get("FORCE_MOCK_MODE", "false").lower() in ("true", "1", "yes")
+    if not FORCE_MOCK_MODE:
+        try:
+            from tensorflow.keras.applications.resnet50 import preprocess_input  # type: ignore
+            return preprocess_input(img_array)
+        except ImportError:
+            pass
+
+    # Fallback manual ResNet50 preprocessing
+    # Subtract ImageNet mean BGR values [103.939, 116.779, 123.68] from the array
+    img_array = img_array.copy()
+    img_array[..., 0] -= 123.68
+    img_array[..., 1] -= 116.779
+    img_array[..., 2] -= 103.939
+    return img_array
 
 
 def numpy_to_base64(image: np.ndarray) -> str:

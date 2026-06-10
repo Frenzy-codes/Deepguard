@@ -13,12 +13,18 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+# Environment variable to force mock mode (highly recommended for Render Free Tier)
+FORCE_MOCK_MODE = os.environ.get("FORCE_MOCK_MODE", "false").lower() in ("true", "1", "yes")
+
 try:
+    if FORCE_MOCK_MODE:
+        raise ImportError("Force mock mode is enabled via environment variable.")
     import tensorflow as tf
     HAS_TENSORFLOW = True
 except ImportError:
     HAS_TENSORFLOW = False
     tf = None
+
 
 # Path to the saved model (relative to the architecture of the backend/)
 # We need to go up 3 levels: services -> app -> backend -> DeepGuard
@@ -66,7 +72,7 @@ def load_model() -> typing.Any:
 
     if not HAS_TENSORFLOW:
         logger.warning(
-            "TensorFlow is not installed. Using mock model fallback. "
+            "TensorFlow is not installed or Mock Mode is forced. Using mock model fallback. "
             "Predictions will be mock based on image properties."
         )
         _model = "mock_model"
@@ -74,14 +80,32 @@ def load_model() -> typing.Any:
 
     if os.path.exists(MODEL_PATH):
         logger.info("Loading trained model from %s", MODEL_PATH)
-        _model = tf.keras.models.load_model(MODEL_PATH)
+        try:
+            _model = tf.keras.models.load_model(MODEL_PATH)
+        except Exception as e:
+            logger.warning(
+                "Failed to load trained model from %s: %s. "
+                "Falling back to mock model to save memory and avoid OOM.",
+                MODEL_PATH,
+                str(e),
+            )
+            # On Render Free tier, trying to compile/build ResNet50 might also trigger OOM.
+            # It's safer to fall back to "mock_model" if model loading fails due to size or invalidity.
+            _model = "mock_model"
     else:
         logger.warning(
             "Trained model not found at %s — building untrained model. "
             "Predictions will be random until a trained model is provided.",
             MODEL_PATH,
         )
-        _model = _build_model()
+        try:
+            _model = _build_model()
+        except Exception as e:
+            logger.warning(
+                "Failed to build untrained model: %s. Falling back to mock model.",
+                str(e),
+            )
+            _model = "mock_model"
 
     return _model
 

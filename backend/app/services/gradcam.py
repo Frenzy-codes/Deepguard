@@ -8,7 +8,14 @@ a Keras model, then overlays the heatmap on the original image.
 import cv2
 import numpy as np
 
+import os
+
+# Environment variable to force mock mode (highly recommended for Render Free Tier)
+FORCE_MOCK_MODE = os.environ.get("FORCE_MOCK_MODE", "false").lower() in ("true", "1", "yes")
+
 try:
+    if FORCE_MOCK_MODE:
+        raise ImportError("Force mock mode is enabled via environment variable.")
     import tensorflow as tf
     HAS_TENSORFLOW = True
 except ImportError:
