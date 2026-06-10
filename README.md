@@ -17,6 +17,16 @@ DeepGuard is an academic-grade full-stack system that detects whether an uploade
 
 ---
 
+## ✨ Key Features
+
+* **Dual-Layer Forensic Pipeline**: Combines a deep learning ResNet50 classifier with an advanced EXIF and AIGC metadata scanner.
+* **EXIF & AIGC Metadata Audit**: Extracts standard camera tags (model, dates) and scans PNG/JPEG text chunks for AI generation signatures (e.g. Stable Diffusion parameters, prompts, Midjourney, DALL-E, etc.). Automatically overrides and flags AI-Generated images with 100% confidence upon signature detection.
+* **Interactive Grad-CAM Heatmap Blender**: Fades and overlays model activations dynamically directly on top of the original image using an interactive slider.
+* **Memory-Optimized Cloud Fallback**: Automatically senses system memory constraints or missing dependencies (e.g. TensorFlow on Windows Python 3.14 or Render Free Tier 512MB RAM) and executes in a lightweight Mock Mode without crashing.
+* **One-Click Deployments**: Fully compatible with Vercel and Render Blueprint engine deployment out-of-the-box.
+
+---
+
 ## 📐 Architecture
 
 ```
@@ -289,9 +299,19 @@ Form field `file` — a JPG or PNG image (≤ 10 MB).
 ```json
 {
   "label": "AI-Generated",
-  "confidence": 0.93,
-  "reliability": "High",
-  "heatmap": "<base64_encoded_png>"
+  "confidence": 1.00,
+  "reliability": "High (Metadata Confirmed)",
+  "heatmap": "<base64_encoded_png>",
+  "metadata": {
+    "has_exif": false,
+    "camera_make": null,
+    "camera_model": null,
+    "software": "Stable Diffusion",
+    "creation_date": null,
+    "ai_tool_detected": true,
+    "prompt": "highly detailed portrait of a wizard, unreal engine, 8k",
+    "raw_metadata": {}
+  }
 }
 ```
 
@@ -301,6 +321,7 @@ Form field `file` — a JPG or PNG image (≤ 10 MB).
 | `confidence`  | float   | Model confidence score (0.0 – 1.0)            |
 | `reliability` | string  | Qualitative reliability (`"High"`, `"Medium"`, `"Low"`) |
 | `heatmap`     | string  | Base64-encoded PNG of the Grad-CAM overlay    |
+| `metadata`    | object  | Extracted EXIF camera info & AI prompt text signatures |
 
 **Error responses:**
 
@@ -341,33 +362,43 @@ python test_predict.py
 
 ## ☁️ Deployment
 
-### Frontend → Vercel
+We support **One-Click Deployments** for both the frontend and backend.
+
+### One-Click Deploy Links
+
+* **Backend (Render Blueprint)**: [![Deploy to Render](https://render.com/images/deploy-to-render.svg)](https://render.com/deploy?repo=https://github.com/Frenzy-codes/Deepguard)
+* **Frontend (Vercel)**: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrenzy-codes%2FDeepguard&root-directory=frontend&env=VITE_API_URL)
+
+---
+
+### Manual Deployment
+
+#### Frontend → Vercel
 
 1. Push the repo to GitHub.
 2. Go to [vercel.com](https://vercel.com) → **New Project** → Import your repo.
 3. Set **Root Directory** to `frontend`.
 4. Set **Build Command** to `npm run build` and **Output Directory** to `dist`.
 5. Add environment variable:
-   ```
-   VITE_API_URL=https://your-backend.onrender.com
-   ```
-6. Deploy.
+   * **Name**: `VITE_API_URL`
+   * **Value**: Your Render backend URL (e.g. `https://deepguard-backend.onrender.com`).
+6. Click **Deploy**.
 
 ---
 
-### Backend → Render
+#### Backend → Render
 
-1. Go to [render.com](https://render.com) → **New Web Service**.
+1. Go to [render.com](https://render.com) → **New Web Service** (or use the Blueprint dashboard option).
 2. Connect your GitHub repo.
 3. Set **Root Directory** to `backend`.
 4. Set **Build Command** to `pip install -r requirements.txt`.
 5. Set **Start Command** to `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-6. Set **Runtime** to `Python 3.11`.
-7. Add environment variable `PYTHON_VERSION = 3.11.7`.
-8. Upload `deepguard_model.h5` to the `model/` directory (or use Render Disk).
-9. Deploy.
-
-> **Tip:** The included `render.yaml` supports [Render Blueprints](https://render.com/docs/infrastructure-as-code) for one-click backend deployment.
+6. Set **Runtime** to `Python`.
+7. Under **Environment Variables**, add:
+   * **`PYTHON_VERSION`**: `3.11.7`
+   * **`FORCE_MOCK_MODE`**: `true` (highly recommended on Render Free Tier to run in a memory-safe mode and avoid OOM crashes).
+   * **`ALLOWED_ORIGINS`**: `*` (or your Vercel URL to restrict access).
+8. Click **Deploy**.
 
 ---
 
@@ -376,13 +407,14 @@ python test_predict.py
 | Layer            | Technology                                  |
 | ---------------- | ------------------------------------------- |
 | Frontend         | React 18, Vite 6, Tailwind CSS 3            |
+| Typography       | Google Fonts (Plus Jakarta Sans, Inter)     |
 | HTTP Client      | Axios 1.7                                   |
 | Icons            | Lucide React                                |
-| Backend          | Python 3.11, FastAPI 0.115, Uvicorn 0.34    |
+| Backend          | Python 3.11 / 3.14, FastAPI 0.115, Uvicorn 0.34 (with memory-safe cloud mock mode) |
 | AI Framework     | TensorFlow 2.10 / Keras 2.10                |
 | Model            | ResNet50 (ImageNet pre-trained, fine-tuned) |
-| Explainability   | Grad-CAM                                    |
-| Image Processing | OpenCV 4.8 (headless), Pillow 9.5, NumPy 1.23 |
+| Explainability   | Grad-CAM (with interactive opacity blender) |
+| Image Processing | OpenCV 4.8 (headless), Pillow 9.5 (EXIF metadata scanner), NumPy 1.23 |
 | Deployment       | Vercel (frontend), Render (backend)         |
 
 ---
