@@ -1,0 +1,13 @@
+# render.yaml — Render Blueprint for DeepGuard backend
+services:
+  - type: web
+    name: deepguard-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.7"
+    plan: free
+    healthCheckPath: /health
