@@ -11,6 +11,7 @@
 **Explainable AI for Image Authenticity Detection**
 
 [![Deploy to Render](https://render.com/images/deploy-to-render.svg)](https://render.com/deploy?repo=https://github.com/Frenzy-codes/Deepguard)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrenzy-codes%2FDeepguard&root-directory=frontend&env=VITE_API_URL)
 
 DeepGuard is an academic-grade full-stack system that detects whether an uploaded image is **Real** or **AI-Generated**, and visually explains its decision using **Grad-CAM heatmaps**. It combines a ResNet50-based deep learning model, a FastAPI backend, and a React + Vite frontend into a seamless end-to-end pipeline.
 
